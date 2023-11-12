@@ -1,7 +1,7 @@
 # spelling_bee
-Code developed using R 4.3.1
+Code developed using R 4.3.1 (2023-06-16 ucrt)
 
-Required package: tidyverse
+Required package: tidyverse (version 2.0.0 or higher)
 
 
 Lexicon lists:
