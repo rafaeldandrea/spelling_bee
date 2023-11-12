@@ -13,16 +13,6 @@ default_hive_letters = unique(unlist(str_split(default_pangram, pattern = '')))
 status_thresholds = 
   c(0, 2, 5, 10, 15, 25, 45, 55, 75, 100) # percentage of the total possible points
 
-print_options = \(){
-  writeLines("Type 'print guesses' to see your guesses so far")
-  writeLines("Type 'print breaks' to see the category breakpoints")
-  writeLines("Type 'print hive' to see the hive")
-  writeLines("Type 'print hints' to see the word count per initial letter")
-  writeLines("Type 'print detailed hints' to see the word + letter count per initial letter")
-  writeLines("Type 'end' to end the game")
-  writeLines("Type 'print options' to see those options again")
-}
-
 status_list = # success categories
   c(
     'Beginner',
@@ -132,6 +122,19 @@ find_solution = \(.dictionary, .required_letter, .hive_letters){
     )
   )
 }
+
+# function to print options
+print_options = \(){
+  writeLines("Type 'print guesses' to see your guesses so far")
+  writeLines("Type 'print breaks' to see the category breakpoints")
+  writeLines("Type 'print hive' to see the hive")
+  writeLines("Type 'print hints' to see the word count per initial letter")
+  writeLines("Type 'print detailed hints' to see the word + letter count per initial letter")
+  writeLines("Type 'print solution' to see the full solution")
+  writeLines("Type 'end' to end the game")
+  writeLines("Type 'print options' to see those options again")
+}
+
 
 # read lexicon
 if (!lexicon_size %in% c('short', 'medium', 'long'))
@@ -323,6 +326,11 @@ while (1) {
   if(guess == 'print options'){
     print_options()
     next
+  }
+  if(guess == 'print solution'){
+    writeLines('The full word list in the solution is:')
+    print(noquote(solution$word))
+    break
   }
   if(guess %in% found_words){
     writeLines('Word already found')
