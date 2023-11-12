@@ -186,14 +186,14 @@ pangrams = tibble()
 writeLines("Welcome to the Spelling Bee Knockoff!")
 writeLines('')
 print_options()
-writeLines('\nUse default pangram?')
+writeLines("\nWhat will it be today? \n 1 Today's hive \n 2 Default hive \n 3 Your custom hive")
 answer = tolower(readline())
-while(!answer %in% c('yes', 'no')){
-  writeLines('\nThis is a yes or no question!')
-  writeLines('Use default pangram?')
+while(!answer %in% 1:3){
+  writeLines('\nAcceptable options are 1, 2, or 3')
+  writeLines("\nWhat will it be today? \n 1 Today's hive \n 2 Default hive \n 3 Your custom hive")
   answer = tolower(readline())
 }
-if(answer == 'yes'){
+if(answer == 2){
   required_letter = default_required_letter
   hive_letters = default_hive_letters
   soltn = 
@@ -206,15 +206,7 @@ if(answer == 'yes'){
   pangrams = soltn$pangrams
   total_points = soltn$total_points
   breaks = soltn$breaks
-} else{
-  writeLines('\nUse custom hive letters?')
-  answer = tolower(readline())
-  while(!answer %in% c('yes', 'no')){
-    writeLines('\nThis is a yes or no question!')
-    writeLines('Use custom hive letters?')
-    answer = tolower(readline())
-  }
-  if(answer == 'yes'){
+} else if(answer == 3){
     pangrams = tibble()
     while(nrow(pangrams) == 0){
       writeLines('\nType your letters as a 7-letter string - no quotes needed')
@@ -261,7 +253,7 @@ if(answer == 'yes'){
       breaks = soltn$breaks
     }
   }
-}
+
 
 found_words = NULL
 accumulated_points = 0
