@@ -1,3 +1,6 @@
+# required library
+library(tidyverse)
+
 # fixed parameters
 min_length = 4 # minimum number of letters acceptable
 set.seed(0) # seed for arranging letters on the screen
@@ -9,6 +12,16 @@ default_hive_letters = unique(unlist(str_split(default_pangram, pattern = '')))
 
 status_thresholds = 
   c(0, 2, 5, 10, 15, 25, 45, 55, 75, 100) # percentage of the total possible points
+
+print_options = \(){
+  writeLines("Type 'print guesses' to see your guesses so far")
+  writeLines("Type 'print breaks' to see the category breakpoints")
+  writeLines("Type 'print hive' to see the hive")
+  writeLines("Type 'print hints' to see the word count per initial letter")
+  writeLines("Type 'print detailed hints' to see the word + letter count per initial letter")
+  writeLines("Type 'end' to end the game")
+  writeLines("Type 'print options' to see those options again")
+}
 
 status_list = # success categories
   c(
@@ -170,13 +183,8 @@ if (lexicon_size == 'short') {
 pangrams = tibble()
 writeLines("Welcome to the Spelling Bee Knockoff!")
 writeLines('')
-writeLines("Type 'print guesses' to see your guesses so far")
-writeLines("Type 'print breaks' to see the category breakpoints")
-writeLines("Type 'print hive' to see the hive")
-writeLines("Type 'print hints' to see the word count per initial letter")
-writeLines("Type 'print detailed hints' to see the word + letter count per initial letter")
-writeLines('')
-writeLines('Use default pangram?')
+print_options()
+writeLines('\nUse default pangram?')
 answer = tolower(readline())
 if(answer == 'yes'){
   required_letter = default_required_letter
@@ -252,7 +260,10 @@ cat(noquote(toupper(sample(hive_letters))))
 cat(noquote(' and the core letter is '))
 cat(noquote(toupper(required_letter)))
 
+writeLines('\n\nGo ahead and type your guesses, one at a time. No quotes needed.')
+
 while (1) {
+  writeLines('')
   guess = tolower(readline())
   if (guess == 'end')
     break
@@ -261,6 +272,7 @@ while (1) {
     cat(noquote(toupper(sample(hive_letters))))
     cat(noquote(' and the core letter is '))
     cat(noquote(toupper(required_letter)))
+    writeLines('')
     next
   }
   if(guess == 'print guesses'){
@@ -299,6 +311,10 @@ while (1) {
     )
     next
   }
+  if(guess == 'print options'){
+    print_options()
+    next
+  }
   if(guess %in% found_words){
     writeLines('Word already found')
     next
@@ -331,17 +347,16 @@ while (1) {
     accumulated_points = accumulated_points + points
     status = status_list[findInterval(accumulated_points, breaks)]
     writeLines(paste(greeting, '  Accumulated points: ', accumulated_points))
-    if (status != current_status &
-        !status %in% c('Genius', 'Queen Bee')) {
+    if (status != current_status) {
       current_status = status
-      writeLines(paste0(current_status, '!'))
+      if (status == 'Genius')
+        writeLines("Congratulations, you reached Genius!")
+      else if (status == 'Queen Bee'){
+        writeLines("You found them all! Queen Bee!")
+        break
+      } else
+        writeLines(paste0(current_status, '!'))
     }
-    if (status == 'Genius')
-      writeLines("Congratulations, you reached Genius!")
-    if (status == 'Queen Bee')
-      writeLines("You found them all! Queen Bee!")
   } else
     writeLines(paste0(guess, ' is not on the solution list :('))
-  if (current_status == 'Queen Bee')
-    break
 }
