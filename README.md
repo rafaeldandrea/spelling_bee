@@ -1,5 +1,10 @@
 # spelling_bee
-Lexicon lists for spelling bee
+Code developed using R 4.3.1
+
+Required package: tidyverse
+
+
+Lexicon lists:
 
 google-10000-english-no-swears.txt: shorter lexicon -- 10k most common words (minus swear words, 9k words): from 'https://github.com/first20hours/google-10000-english/raw/master/google-10000-english-no-swears.txt'
 
