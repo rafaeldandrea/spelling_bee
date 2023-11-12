@@ -133,7 +133,6 @@ find_solution = \(.dictionary, .required_letter, .hive_letters){
   )
 }
 
-
 # read lexicon
 if (!lexicon_size %in% c('short', 'medium', 'long'))
   stop('Lexicon must be one of "short", "medium", or "long"')
@@ -186,6 +185,11 @@ writeLines('')
 print_options()
 writeLines('\nUse default pangram?')
 answer = tolower(readline())
+while(!answer %in% c('yes', 'no')){
+  writeLines('\nThis is a yes or no question!')
+  writeLines('Use default pangram?')
+  answer = tolower(readline())
+}
 if(answer == 'yes'){
   required_letter = default_required_letter
   hive_letters = default_hive_letters
@@ -200,12 +204,17 @@ if(answer == 'yes'){
   total_points = soltn$total_points
   breaks = soltn$breaks
 } else{
-  writeLines('Use custom hive letters?')
+  writeLines('\nUse custom hive letters?')
   answer = tolower(readline())
+  while(!answer %in% c('yes', 'no')){
+    writeLines('\nThis is a yes or no question!')
+    writeLines('Use custom hive letters?')
+    answer = tolower(readline())
+  }
   if(answer == 'yes'){
     pangrams = tibble()
     while(nrow(pangrams) == 0){
-      writeLines('Type your letters as a 7-letter string - no quotes needed')
+      writeLines('\nType your letters as a 7-letter string - no quotes needed')
       entered_word = tolower(readline())
       hive_letters = unique(unlist(str_split(entered_word, pattern = '')))
       if (length(hive_letters) != 7)
@@ -255,7 +264,7 @@ found_words = NULL
 accumulated_points = 0
 current_status = 'Beginner'
 
-cat(noquote('The hive letters are '))
+cat(noquote('\nThe hive letters are '))
 cat(noquote(toupper(sample(hive_letters))))
 cat(noquote(' and the core letter is '))
 cat(noquote(toupper(required_letter)))
