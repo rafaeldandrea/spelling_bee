@@ -1,7 +1,10 @@
 # spelling_bee
 Code developed using R 4.3.1 (2023-06-16 ucrt)
 
-Required package: tidyverse (version 2.0.0 or higher)
+Required packages: 
+
+tidyverse (version 2.0.0 or higher)
+ggforce (version 0.4.1 or higher)
 
 
 Lexicon lists:
