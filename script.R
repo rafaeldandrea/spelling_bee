@@ -175,7 +175,7 @@ plot_function =
     # Plotting
     plot = 
       ggplot(hex_data, aes(x = x, y = y, group = id)) +
-      geom_polygon(fill = cols, color = "black", size = 1.5) +
+      geom_polygon(fill = cols, color = "black", linewidth = 1.5) +
       coord_fixed(ratio = 1) +
       geom_text(aes(x , y , label = id), data = hex_centers, size = 20) +
       theme_void() +
