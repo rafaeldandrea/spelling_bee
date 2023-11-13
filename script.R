@@ -147,7 +147,7 @@ print_options = \(){
 
 # function to plot the hive
 plot_function = 
-  \(hive_letters, required_letter, genius, current_points){
+  \(hive_letters, required_letter, status, genius, current_points){
     # Function to generate hexagon vertices
     hex_vertices = 
       \(center_x, center_y, size = 1) {
@@ -172,6 +172,29 @@ plot_function =
     
     cols = c(rep('white', 7 * 6), rep("gold", 7))
     
+    if(!is.na(status)){
+      plot_title = 
+        paste0(
+          status,
+          '!    ',
+          'Your points: ', 
+          current_points, 
+          '    Genius: ', 
+          genius,
+          '    (', max(0, genius - current_points), ' points to Genius)'
+        )
+    } else{
+      plot_title = 
+        paste0(
+          'Your points: ', 
+          current_points, 
+          '    Genius: ', 
+          genius,
+          '    (', max(0, genius - current_points), ' points to Genius)'
+        )
+      }
+      
+    
     # Plotting
     plot = 
       ggplot(hex_data, aes(x = x, y = y, group = id)) +
@@ -179,15 +202,7 @@ plot_function =
       coord_fixed(ratio = 1) +
       geom_text(aes(x , y , label = id), data = hex_centers, size = 20) +
       theme_void() +
-      ggtitle(
-        paste0(
-          'Your points: ', 
-          current_points, 
-          '    Genius: ', 
-          genius,
-          '    (', genius - current_points, ' points to Genius)'
-        )
-      )
+      ggtitle(plot_title)
     
     return(plot)
   }
@@ -315,6 +330,7 @@ hive =
   plot_function(
     hive_letters, 
     required_letter, 
+    status = NA,
     genius = breaks[length(breaks) - 1], 
     current_points = 0
   )
@@ -388,6 +404,8 @@ while (1) {
   if(guess == 'print solution'){
     writeLines('The full word list in the solution is:')
     print(noquote(solution$word))
+    writeLines('of which you missed')
+    print(noquote(setdiff(solution$word, found_words)))
     break
   }
   if(guess %in% found_words){
@@ -437,6 +455,7 @@ while (1) {
       plot_function(
         hive_letters, 
         required_letter, 
+        status = current_status,
         genius = breaks[length(breaks) - 1], 
         current_points = accumulated_points
       )
