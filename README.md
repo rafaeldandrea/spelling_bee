@@ -1,14 +1,14 @@
 # spelling_bee
-Code developed using R 4.3.1 (2023-06-16 ucrt)
+Code developed using **R 4.3.1** (2023-06-16 ucrt)
 
-Required packages: 
+**Required packages**: 
 
 tidyverse (version 2.0.0 or higher)
 
 ggforce (version 0.4.1 or higher)
 
 
-Lexicon lists:
+**Lexicon lists**:
 
 google-10000-english-no-swears.txt: shorter lexicon -- 10k most common words (minus swear words, 9k words): from 'https://github.com/first20hours/google-10000-english/raw/master/google-10000-english-no-swears.txt'
 
