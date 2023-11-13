@@ -1,13 +1,23 @@
-# required library
+# required libraries
 library(tidyverse)
+library(ggforce)
 
 # fixed parameters
 min_length = 4 # minimum number of letters acceptable
 set.seed(0) # seed for arranging letters on the screen
 lexicon_size = 'medium' # options are short, medium, and long
 
-default_pangram = 'divulging'
-default_required_letter = 'd'
+# plot settings
+theme_set(theme_bw())
+theme_update(
+  panel.grid = element_blank(),
+  strip.background = element_rect(fill = 'orange'),
+  aspect.ratio = 1
+)
+
+
+default_pangram = 'checkmat'
+default_required_letter = 'k'
 default_hive_letters = unique(unlist(str_split(default_pangram, pattern = '')))
 
 status_thresholds = 
@@ -135,6 +145,53 @@ print_options = \(){
   writeLines("Type 'print options' to see those options again")
 }
 
+# function to plot the hive
+plot_function = 
+  \(hive_letters, required_letter, genius, current_points){
+    # Function to generate hexagon vertices
+    hex_vertices = 
+      \(center_x, center_y, size = 1) {
+        tibble(
+          x = center_x + size * cos(seq(0, 2 * pi, length.out = 7)),
+          y = center_y + size * sin(seq(0, 2 * pi, length.out = 7))
+        )
+      }
+    
+    # Hexagon center positions
+    hex_centers = 
+      tibble(
+        x = c(0, sqrt(3), sqrt(3), 0, -sqrt(3), -sqrt(3), 0),
+        y = c(2, 1, -1, -2, -1, 1, 0),
+        id = toupper(c(setdiff(hive_letters, required_letter), required_letter))
+      )
+    
+    # Create data for plotting
+    hex_data = 
+      map2_df(hex_centers$x, hex_centers$y, ~hex_vertices(.x, .y)) |>
+      mutate(id = rep(hex_centers$id, each = 7))
+    
+    cols = c(rep('white', 7 * 6), rep("gold", 7))
+    
+    # Plotting
+    plot = 
+      ggplot(hex_data, aes(x = x, y = y, group = id)) +
+      geom_polygon(fill = cols, color = "black", size = 1.5) +
+      coord_fixed(ratio = 1) +
+      geom_text(aes(x , y , label = id), data = hex_centers, size = 20) +
+      theme_void() +
+      ggtitle(
+        paste0(
+          'Your points: ', 
+          current_points, 
+          '    Genius: ', 
+          genius,
+          '    (', genius - current_points, ' points to Genius)'
+        )
+      )
+    
+    return(plot)
+  }
+
 
 # read lexicon
 if (!lexicon_size %in% c('short', 'medium', 'long'))
@@ -254,6 +311,15 @@ if(answer == 2){
     }
   }
 
+hive = 
+  plot_function(
+    hive_letters, 
+    required_letter, 
+    genius = breaks[length(breaks) - 1], 
+    current_points = 0
+  )
+show(hive)
+
 
 found_words = NULL
 accumulated_points = 0
@@ -366,6 +432,16 @@ while (1) {
       } else
         writeLines(paste0(current_status, '!'))
     }
+    
+    hive = 
+      plot_function(
+        hive_letters, 
+        required_letter, 
+        genius = breaks[length(breaks) - 1], 
+        current_points = accumulated_points
+      )
+    show(hive)
+    
   } else
     writeLines(paste0(guess, ' is not on the solution list :('))
 }
