@@ -72,13 +72,35 @@ find_solution = \(.dictionary, .required_letter, .hive_letters){
     )
   }
   
-  solution =
+  solution = 
     words |>
     mutate(
+      length = 
+        words |>
+        apply(
+          1, 
+          \(word){
+            word |>
+              str_split(pattern = '') |>
+              unlist() |>
+              length()
+          }
+        ),
+      unique_letters = 
+          words |>
+          apply(
+            1, 
+            \(word){
+              word |>
+                str_split(pattern = '') |>
+                unlist() |>
+                unique() |>
+                length()
+            }
+          ),
       pangram = word %in% pangrams$word,
-      length = str_length(word),
-      points = ifelse(length == 4, 1, ifelse(pangram, length + 7, length))
-    )
+      points = ifelse(length == 4, 1, length + ifelse(pangram == TRUE, 7, 0))
+    ) 
   
   total_points =
     solution |>
@@ -212,7 +234,22 @@ plot_function =
 if (!lexicon_size %in% c('short', 'medium', 'long'))
   stop('Lexicon must be one of "short", "medium", or "long"')
 
-## longer lexicon (368k words)
+
+# shorter lexicon - for pangrams -- 10k most common words (minus swear words, 9k words)
+# contains 1,546 possible pangrams
+dictionary_short =
+  read.table(
+    url(
+      'https://github.com/rafaeldandrea/spelling_bee/raw/main/google-10000-english-usa-no-swears.txt'
+    )
+  ) |>
+  as_tibble() |>
+  filter(str_count(V1) >= min_length) |>
+  rename(word = V1) |>
+  arrange(word)
+
+
+# longer lexicon (368k words)
 if (lexicon_size == 'long') {
   dictionary =
     read.table(
@@ -241,17 +278,21 @@ if (lexicon_size == 'medium') {
 
 # shorter lexicon -- 10k most common words (minus swear words, 9k words)
 if (lexicon_size == 'short') {
-  dictionary =
-    read.table(
-      url(
-        'https://github.com/rafaeldandrea/spelling_bee/raw/main/google-10000-english-usa-no-swears.txt'
-      )
-    ) |>
-    as_tibble() |>
-    filter(str_count(V1) >= min_length) |>
-    rename(word = V1) |>
-    arrange(word)
+  dictionary = dictionary_short  
 }
+
+# find all possible pangrams: words in the short lexicon with 7 unique letters and no "s"
+possible_pangrams = 
+  dictionary_short |>
+  mutate(
+    unique = apply(dictionary_short, 1, \(word) length(unique(unlist(str_split(word, pattern = '')))))
+  ) |>
+  filter(
+    unique == 7,
+    str_detect(word, 's') == FALSE
+  ) |>
+  inner_join(dictionary, by = 'word')
+
 
 # start the game
 pangrams = tibble()
@@ -308,10 +349,15 @@ if(answer == 2){
       }
     }
   } else{
+    total_points = 1000
     set.seed(as.integer(format(Sys.Date(), "%Y%m%d")))
-    pangrams = tibble()
-    while(nrow(pangrams) == 0){
-      hive_letters = sample(setdiff(letters, 's'), 7)
+    while(total_points > 400){
+      .pangram = sample(possible_pangrams$word, 1)
+      hive_letters = 
+        .pangram |>
+        str_split(pattern = '') |>
+        unlist() |>
+        unique()
       required_letter = sample(hive_letters, 1)
       soltn = 
         find_solution(
