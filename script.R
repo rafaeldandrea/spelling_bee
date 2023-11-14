@@ -157,19 +157,40 @@ find_solution = \(.dictionary, .required_letter, .hive_letters){
 
 # function to print options
 print_options = \(){
-  writeLines("Type 'print guesses' to see your guesses so far")
-  writeLines("Type 'print breaks' to see the category breakpoints")
-  writeLines("Type 'print hive' to see the hive")
-  writeLines("Type 'print hints' to see the word count per initial letter")
-  writeLines("Type 'print detailed hints' to see the word + letter count per initial letter")
-  writeLines("Type 'print solution' to see the full solution")
-  writeLines("Type 'end' to end the game")
-  writeLines("Type 'print options' to see those options again")
+  writeLines("Type .rules to see the rules of the game")
+  writeLines("Type .guesses to see your guesses so far")
+  writeLines("Type .breaks to see the category breakpoints")
+  writeLines("Type .hints to see the word count per initial letter")
+  writeLines("Type .detailed hints to see the word + letter count per initial letter")
+  writeLines("Type .solution to see the full solution and end the game")
+  writeLines("Type .options to see these options again")
+  writeLines('')
+  writeLines("Type END to end the game")
+}
+
+# print the initial greeting
+print_greeting = \(){
+  writeLines("Welcome to the Spelling Bee Knockoff!")
+  writeLines('')
+  writeLines("Type .rules to see the rules of the game")
+  writeLines("Type .options to see options")
+  writeLines('')
+  writeLines("\nWhat will it be today? \n 1 Today's hive \n 2 Default hive \n 3 Your custom hive")
+  writeLines('')
+}
+
+# print the rules of the game
+print_rules = \(){
+  writeLines("Rise to Genius level by creating words using letters from the hive.")
+  writeLines("Words must contain at least 4 letters and include the center letter.")
+  writeLines("Hyphenated words, proper nouns, and cuss words are not included.")
+  writeLines("4-letter words earn 1 point, longer words earn 1 point per letter.")
+  writeLines("The puzzle includes at least one 'pangram', which uses all 7 letters. These are worth 7 extra points!")
 }
 
 # function to plot the hive
 plot_function = 
-  \(hive_letters, required_letter, status, genius, current_points){
+  \(hive_letters, required_letter, status, genius, current_points, found_words){
     # Function to generate hexagon vertices
     hex_vertices = 
       \(center_x, center_y, size = 1) {
@@ -192,30 +213,24 @@ plot_function =
       map2_df(hex_centers$x, hex_centers$y, ~hex_vertices(.x, .y)) |>
       mutate(id = rep(hex_centers$id, each = 7))
     
-    cols = c(rep('white', 7 * 6), rep("gold", 7))
+    cols = c(rep('lightgrey', 7 * 6), rep("gold", 7))
     
-    if(!is.na(status)){
-      plot_title = 
-        paste0(
-          status,
-          '!    ',
-          'Your points: ', 
-          current_points, 
-          '    Genius: ', 
-          genius,
-          '    (', max(0, genius - current_points), ' points to Genius)'
-        )
-    } else{
-      plot_title = 
-        paste0(
-          'Your points: ', 
-          current_points, 
-          '    Genius: ', 
-          genius,
-          '    (', max(0, genius - current_points), ' points to Genius)'
-        )
-      }
-      
+    plot_title = 
+      paste0(
+        status,
+        '!\n',
+        "You've found ",
+        length(found_words),
+        ' words     Your points: ', 
+        current_points
+      )
+    
+    plot_caption = 
+      paste0(
+        'Genius: ', 
+        genius,
+        '    (', max(0, genius - current_points), ' points to Genius)'
+      )
     
     # Plotting
     plot = 
@@ -224,7 +239,14 @@ plot_function =
       coord_fixed(ratio = 1) +
       geom_text(aes(x , y , label = id), data = hex_centers, size = 20) +
       theme_void() +
-      ggtitle(plot_title)
+      labs(
+        title = plot_title,
+        caption = plot_caption
+      ) +
+      theme(
+        plot.title = element_text(hjust = 0.5, face = 'bold', size = 20),
+        plot.caption = element_text(hjust = 0.5, size = 20)
+      )
     
     return(plot)
   }
@@ -296,10 +318,7 @@ possible_pangrams =
 
 # start the game
 pangrams = tibble()
-writeLines("Welcome to the Spelling Bee Knockoff!")
-writeLines('')
-print_options()
-writeLines("\nWhat will it be today? \n 1 Today's hive \n 2 Default hive \n 3 Your custom hive")
+print_greeting()
 answer = tolower(readline())
 while(!answer %in% 1:3){
   writeLines('\nAcceptable options are 1, 2, or 3')
@@ -372,34 +391,55 @@ if(answer == 2){
     }
   }
 
+if(exists('found_words')){
+  found_words = found_words
+  accumulated_points = accumulated_points
+  current_status = current_status
+  
+  illegal_letters = 
+    found_words |>
+    sapply(
+      \(word) 
+      unlist(str_split(word, pattern = ''))) |> 
+    unlist() |> 
+    unique() |> 
+    setdiff(hive_letters)
+  
+  if(length(illegal_letters) > 0){
+    found_words = NULL
+    accumulated_points = 0
+    current_status = 'Beginner'
+  } 
+} else{
+  found_words = NULL
+  accumulated_points = 0
+  current_status = 'Beginner'
+} 
+
 hive = 
   plot_function(
     hive_letters, 
     required_letter, 
-    status = NA,
+    status = current_status,
     genius = breaks[length(breaks) - 1], 
-    current_points = 0
+    current_points = accumulated_points,
+    found_words = found_words
   )
 show(hive)
 
-
-found_words = NULL
-accumulated_points = 0
-current_status = 'Beginner'
-
-cat(noquote('\nThe hive letters are '))
-cat(noquote(toupper(sample(hive_letters))))
-cat(noquote(' and the core letter is '))
-cat(noquote(toupper(required_letter)))
-
-writeLines('\n\nGo ahead and type your guesses, one at a time. No quotes needed.')
+writeLines('\nType your guesses, one at a time. No quotes needed.')
 
 while (1) {
   writeLines('')
   guess = tolower(readline())
-  if (guess == 'end')
+  
+  if (guess %in% c('end', '.end'))
     break
-  if (guess == 'print hive') {
+  if (guess == '.rules'){
+    print_rules()
+    next
+  } 
+  if (guess == '.hive') {
     cat(noquote('The hive letters are '))
     cat(noquote(toupper(sample(hive_letters))))
     cat(noquote(' and the core letter is '))
@@ -407,15 +447,15 @@ while (1) {
     writeLines('')
     next
   }
-  if(guess == 'print guesses'){
+  if(guess == '.guesses'){
     if(is.null(found_words)){
       writeLines('No words found yet!')
       next
     } 
-    writeLines(sort(found_words))
+    print(noquote(sort(found_words)))
     next
   }
-  if(guess == 'print breaks'){
+  if(guess == '.breaks'){
     writeLines('The category breaks are')
     tibble(
       category = status_list,
@@ -425,7 +465,7 @@ while (1) {
       print()
     next
   }
-  if(guess == 'print hints'){
+  if(guess == '.hints'){
     view(soltn$initial_summary)
     if(nrow(pangrams == 1)) writeLines('There is 1 pangram')
     else writeLines(paste('There are', nrow(pangrams), 'pangrams'))
@@ -434,7 +474,7 @@ while (1) {
     )
     next
   }
-  if(guess == 'print detailed hints'){
+  if(guess == '.detailed hints'){
     view(soltn$initial_breakdown)
     if(nrow(pangrams == 1)) writeLines('There is 1 pangram')
     else writeLines(paste('There are', nrow(pangrams), 'pangrams'))
@@ -443,11 +483,11 @@ while (1) {
     )
     next
   }
-  if(guess == 'print options'){
+  if(guess == '.options'){
     print_options()
     next
   }
-  if(guess == 'print solution'){
+  if(guess == '.solution'){
     writeLines('The full word list in the solution is:')
     print(noquote(solution$word))
     writeLines('of which you missed')
@@ -485,13 +525,13 @@ while (1) {
     }
     accumulated_points = accumulated_points + points
     status = status_list[findInterval(accumulated_points, breaks)]
-    writeLines(paste(greeting, '  Accumulated points: ', accumulated_points))
+    writeLines(paste(greeting, ' ', points, ' points'))
     if (status != current_status) {
       current_status = status
       if (status == 'Genius')
-        writeLines("Congratulations, you reached Genius!")
+        writeLines("Congratulations, you've reached Genius!")
       else if (status == 'Queen Bee'){
-        writeLines("You found them all! Queen Bee!")
+        writeLines("You've found them all! Queen Bee!")
         break
       } else
         writeLines(paste0(current_status, '!'))
@@ -503,7 +543,8 @@ while (1) {
         required_letter, 
         status = current_status,
         genius = breaks[length(breaks) - 1], 
-        current_points = accumulated_points
+        current_points = accumulated_points,
+        found_words = found_words
       )
     show(hive)
     
