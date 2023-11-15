@@ -157,25 +157,26 @@ find_solution = \(.dictionary, .required_letter, .hive_letters){
 
 # function to print options
 print_options = \(){
-  writeLines("Type .rules to see the rules of the game")
-  writeLines("Type .guesses to see your guesses so far")
-  writeLines("Type .breaks to see the category breakpoints")
-  writeLines("Type .hints to see the word count per initial letter")
-  writeLines("Type .detailed hints to see the word + letter count per initial letter")
-  writeLines("Type .solution to see the full solution and end the game")
-  writeLines("Type .options to see these options again")
+  writeLines("Enter .rules to see the rules of the game")
+  writeLines("Enter .found to see the words you have already found")
+  writeLines("Enter .levels to see the levels and their breakpoints")
+  writeLines("Enter .hints to see the word count per initial letter")
+  writeLines("Enter .breakdown to see the word count + letter count per initial letter")
+  writeLines("Enter .solution to see the full solution and end the game")
+  writeLines("Enter .default to play with the default hive")
+  writeLines("Enter .custom to play with a custom hive")
+  writeLines("Enter .newhive to generate a new hive")
+  writeLines("Enter .options to see these options again")
   writeLines('')
-  writeLines("Type END to end the game")
+  writeLines("Enter END to end the game")
 }
 
 # print the initial greeting
 print_greeting = \(){
   writeLines("Welcome to the Spelling Bee Knockoff!")
   writeLines('')
-  writeLines("Type .rules to see the rules of the game")
-  writeLines("Type .options to see options")
-  writeLines('')
-  writeLines("\nWhat will it be today? \n 1 Today's hive \n 2 Default hive \n 3 Your custom hive")
+  writeLines("Enter .rules to see the rules of the game")
+  writeLines("Enter .options to see options")
   writeLines('')
 }
 
@@ -186,6 +187,200 @@ print_rules = \(){
   writeLines("Hyphenated words, proper nouns, and cuss words are not included.")
   writeLines("4-letter words earn 1 point, longer words earn 1 point per letter.")
   writeLines("The puzzle includes at least one 'pangram', which uses all 7 letters. These are worth 7 extra points!")
+}
+
+# functions to create hives
+create_default_hive = \(){
+  required_letter = default_required_letter
+  hive_letters = default_hive_letters
+  
+  soltn =
+    find_solution(
+      .dictionary = dictionary,
+      .required_letter = required_letter,
+      .hive_letters = default_hive_letters
+    )
+  breaks = soltn$breaks
+  
+  hive_plot = 
+    plot_function(
+      hive_letters, 
+      required_letter, 
+      status = "Beginner",
+      genius = breaks[length(breaks) - 1], 
+      current_points = 0,
+      found_words = NULL
+    )
+  show(hive_plot)
+  
+  return(
+    list(
+      hive_letters = hive_letters,
+      required_letter = required_letter,
+      solution = soltn$solution,
+      pangrams = soltn$pangrams,
+      total_points = soltn$total_points,
+      breaks = soltn$breaks,
+      initial_summary = soltn$initial_summary,
+      initial_breakdown = soltn$initial_breakdown,
+      found_words = NULL,
+      accumulated_points = 0,
+      current_status = 'Beginner'
+    )
+  )
+}
+
+create_custom_hive = \(){
+  pangrams = tibble()
+  while(nrow(pangrams) == 0){
+    writeLines('\nEnter your letters as a 7+ letter string - no quotes needed (END to quit)')
+    entered_word = tolower(readline())
+    if (entered_word %in% c('end', '.end')) return(0)
+    hive_letters = unique(unlist(str_split(entered_word, pattern = '')))
+    while ('s' %in% hive_letters){
+      writeLines("\nHive cannot contain 'S'!")
+      writeLines('\nEnter your letters as a 7+ letter string - no quotes needed (END to quit)')
+      entered_word = tolower(readline())
+      if (entered_word %in% c('end', '.end')) return(0)
+      hive_letters = unique(unlist(str_split(entered_word, pattern = '')))
+    }
+    while (length(hive_letters) != 7){
+      writeLines('Need 7 different letters!')
+      writeLines('\nEnter your letters as a 7+ letter string - no quotes needed (END to quit)')
+      entered_word = tolower(readline())
+      if (entered_word %in% c('end', '.end')) return(0)
+      hive_letters = unique(unlist(str_split(entered_word, pattern = '')))
+    }
+    writeLines('Enter the required letter')
+    required_letter = readline()
+    if (required_letter %in% c('end', '.end')) return(0)
+    while (!required_letter %in% hive_letters){
+      writeLines('Required letter must be in the Hive!') 
+      required_letter = readline()
+      if (required_letter %in% c('end', '.end')) return(0)
+    }
+    
+    soltn = 
+      find_solution(
+        .dictionary = dictionary, 
+        .required_letter = required_letter,
+        .hive_letters = hive_letters
+      )
+    solution = soltn$solution
+    pangrams = soltn$pangrams
+    total_points = soltn$total_points
+    breaks = soltn$breaks
+    
+    if(nrow(pangrams) == 0){
+      writeLines('Your hive has no pangram! Try again')
+    }
+  }
+  
+  hive_plot = 
+    plot_function(
+      hive_letters, 
+      required_letter, 
+      status = "Beginner",
+      genius = breaks[length(breaks) - 1], 
+      current_points = 0,
+      found_words = NULL
+    )
+  show(hive_plot)
+  
+  return(
+    list(
+      hive_letters = hive_letters,
+      required_letter = required_letter,
+      solution = soltn$solution,
+      pangrams = soltn$pangrams,
+      total_points = soltn$total_points,
+      breaks = soltn$breaks,
+      initial_summary = soltn$initial_summary,
+      initial_breakdown = soltn$initial_breakdown,
+      found_words = NULL,
+      accumulated_points = 0,
+      current_status = 'Beginner'
+    )
+  )
+} 
+
+create_new_hive = \(reset, seed){
+  set.seed(seed)
+  total_points = 1000
+  while(total_points > 400){
+    .pangram = sample(possible_pangrams$word, 1)
+    hive_letters = 
+      .pangram |>
+      str_split(pattern = '') |>
+      unlist() |>
+      unique()
+    required_letter = sample(hive_letters, 1)
+    soltn = 
+      find_solution(
+        .dictionary = dictionary, 
+        .required_letter = required_letter,
+        .hive_letters = hive_letters
+      )
+    breaks = soltn$breaks
+    total_points = soltn$total_points
+  }
+  
+  if(reset == TRUE){
+    
+    hive_plot = 
+      plot_function(
+        hive_letters, 
+        required_letter, 
+        status = "Beginner",
+        genius = breaks[length(breaks) - 1], 
+        current_points = 0,
+        found_words = NULL
+      )
+    show(hive_plot)
+    
+    return(
+      list(
+        hive_letters = hive_letters,
+        required_letter = required_letter,
+        solution = soltn$solution,
+        pangrams = soltn$pangrams,
+        total_points = soltn$total_points,
+        breaks = soltn$breaks,
+        initial_summary = soltn$initial_summary,
+        initial_breakdown = soltn$initial_breakdown,
+        found_words = NULL,
+        accumulated_points = 0,
+        current_status = 'Beginner'
+      )
+    )
+  } 
+  
+  if(reset == FALSE) {
+    hive_plot = 
+      plot_function(
+        hive_letters, 
+        required_letter, 
+        status = current_status,
+        genius = breaks[length(breaks) - 1], 
+        current_points = accumulated_points,
+        found_words = found_words
+      )
+    show(hive_plot)
+    
+    return(
+      list(
+        hive_letters = hive_letters,
+        required_letter = required_letter,
+        solution = soltn$solution,
+        pangrams = soltn$pangrams,
+        total_points = soltn$total_points,
+        breaks = soltn$breaks,
+        initial_summary = soltn$initial_summary,
+        initial_breakdown = soltn$initial_breakdown
+      )
+    )
+  }
+  
 }
 
 # function to plot the hive
@@ -215,15 +410,25 @@ plot_function =
     
     cols = c(rep('lightgrey', 7 * 6), rep("gold", 7))
     
-    plot_title = 
-      paste0(
-        status,
-        '!\n',
-        "You've found ",
-        length(found_words),
-        ' words     Your points: ', 
-        current_points
-      )
+    if(length(found_words) != 1){
+      plot_title = 
+        paste0(
+          status,
+          '!\n',
+          "You've found ",
+          length(found_words),
+          ' words     Your points: ', 
+          current_points
+        )
+    } else{
+      plot_title = 
+        paste0(
+          status,
+          '!\n',
+          "You've found 1 word      Your points: ", 
+          current_points
+        )
+    }
     
     plot_caption = 
       paste0(
@@ -317,84 +522,11 @@ possible_pangrams =
 
 
 # start the game
-pangrams = tibble()
 print_greeting()
-answer = tolower(readline())
-while(!answer %in% 1:3){
-  writeLines('\nAcceptable options are 1, 2, or 3')
-  writeLines("\nWhat will it be today? \n 1 Today's hive \n 2 Default hive \n 3 Your custom hive")
-  answer = tolower(readline())
-}
-if(answer == 2){
-  required_letter = default_required_letter
-  hive_letters = default_hive_letters
-  soltn = 
-    find_solution(
-      .dictionary = dictionary, 
-      .required_letter = required_letter,
-      .hive_letters = default_hive_letters
-    )
-  solution = soltn$solution
-  pangrams = soltn$pangrams
-  total_points = soltn$total_points
-  breaks = soltn$breaks
-} else if(answer == 3){
-    pangrams = tibble()
-    while(nrow(pangrams) == 0){
-      writeLines('\nType your letters as a 7-letter string - no quotes needed')
-      entered_word = tolower(readline())
-      hive_letters = unique(unlist(str_split(entered_word, pattern = '')))
-      if (length(hive_letters) != 7)
-        stop('Need 7 different letters!')
-      
-      writeLines('Type the required letter')
-      required_letter = readline()
-      if (!required_letter %in% hive_letters)
-        stop('Required letter must be in the Hive!')  
-      
-      soltn = 
-        find_solution(
-          .dictionary = dictionary, 
-          .required_letter = required_letter,
-          .hive_letters = hive_letters
-        )
-      solution = soltn$solution
-      pangrams = soltn$pangrams
-      total_points = soltn$total_points
-      breaks = soltn$breaks
-      
-      if(nrow(pangrams) == 0){
-        writeLines('Your hive has no pangram! Try again')
-      }
-    }
-  } else{
-    total_points = 1000
-    set.seed(as.integer(format(Sys.Date(), "%Y%m%d")))
-    while(total_points > 400){
-      .pangram = sample(possible_pangrams$word, 1)
-      hive_letters = 
-        .pangram |>
-        str_split(pattern = '') |>
-        unlist() |>
-        unique()
-      required_letter = sample(hive_letters, 1)
-      soltn = 
-        find_solution(
-          .dictionary = dictionary, 
-          .required_letter = required_letter,
-          .hive_letters = hive_letters
-        )
-      solution = soltn$solution
-      pangrams = soltn$pangrams
-      total_points = soltn$total_points
-      breaks = soltn$breaks
-    }
-  }
 
-if(exists('found_words')){
-  found_words = found_words
-  accumulated_points = accumulated_points
-  current_status = current_status
+if(all(exists('found_words'), exists('accumulated_points'), exists('current_status'))){
+  hive = create_new_hive(reset = FALSE, seed = as.integer(format(Sys.Date(), "%Y%m%d")))  
+  list2env(hive, envir = .GlobalEnv)
   
   illegal_letters = 
     found_words |>
@@ -411,35 +543,52 @@ if(exists('found_words')){
     current_status = 'Beginner'
   } 
 } else{
-  found_words = NULL
-  accumulated_points = 0
-  current_status = 'Beginner'
-} 
+  hive = create_new_hive(reset = TRUE, seed = as.integer(format(Sys.Date(), "%Y%m%d")))  
+  list2env(hive, envir = .GlobalEnv)
+}
 
-hive = 
-  plot_function(
-    hive_letters, 
-    required_letter, 
-    status = current_status,
-    genius = breaks[length(breaks) - 1], 
-    current_points = accumulated_points,
-    found_words = found_words
-  )
-show(hive)
-
-writeLines('\nType your guesses, one at a time. No quotes needed.')
+writeLines('\nEnter words, one at a time. No quotes needed.')
 
 while (1) {
   writeLines('')
-  guess = tolower(readline())
+  entry = tolower(readline())
   
-  if (guess %in% c('end', '.end'))
+  if (entry %in% c('end', '.end'))
     break
-  if (guess == '.rules'){
+  if (entry == '.newhive'){
+    writeLines('Enter a numerical seed for the new hive')
+    writeLines('')
+    answer = as.numeric(readline())
+    hive = create_new_hive(reset = TRUE, seed = answer)  
+    list2env(hive, envir = .GlobalEnv)
+    writeLines('\nEnter words, one at a time. No quotes needed.')
+    writeLines('')
+    next
+  }
+  if (entry == '.custom'){
+    hive = create_custom_hive()
+    if(hive != 0){
+      list2env(hive, envir = .GlobalEnv)
+      writeLines('\nEnter words, one at a time. No quotes needed.')
+      writeLines('')
+    } else{
+      writeLines('\nCustom hive not created.')
+      writeLines('')
+    }
+    next
+  }
+  if (entry == '.default'){
+    hive = create_default_hive()
+    list2env(hive, envir = .GlobalEnv)
+    writeLines('\nEnter words, one at a time. No quotes needed.')
+    writeLines('')
+    next
+  }
+  if (entry == '.rules'){
     print_rules()
     next
   } 
-  if (guess == '.hive') {
+  if (entry == '.hive') {
     cat(noquote('The hive letters are '))
     cat(noquote(toupper(sample(hive_letters))))
     cat(noquote(' and the core letter is '))
@@ -447,7 +596,7 @@ while (1) {
     writeLines('')
     next
   }
-  if(guess == '.guesses'){
+  if(entry == '.found'){
     if(is.null(found_words)){
       writeLines('No words found yet!')
       next
@@ -455,8 +604,8 @@ while (1) {
     print(noquote(sort(found_words)))
     next
   }
-  if(guess == '.breaks'){
-    writeLines('The category breaks are')
+  if(entry == '.levels'){
+    writeLines('The levels are')
     tibble(
       category = status_list,
       points = breaks
@@ -465,8 +614,8 @@ while (1) {
       print()
     next
   }
-  if(guess == '.hints'){
-    view(soltn$initial_summary)
+  if(entry == '.hints'){
+    view(initial_summary)
     if(nrow(pangrams == 1)) writeLines('There is 1 pangram')
     else writeLines(paste('There are', nrow(pangrams), 'pangrams'))
     writeLines(
@@ -474,8 +623,8 @@ while (1) {
     )
     next
   }
-  if(guess == '.detailed hints'){
-    view(soltn$initial_breakdown)
+  if(entry == '.breakdown'){
+    view(initial_breakdown)
     if(nrow(pangrams == 1)) writeLines('There is 1 pangram')
     else writeLines(paste('There are', nrow(pangrams), 'pangrams'))
     writeLines(
@@ -483,37 +632,42 @@ while (1) {
     )
     next
   }
-  if(guess == '.options'){
+  if(entry == '.options'){
     print_options()
     next
   }
-  if(guess == '.solution'){
-    writeLines('The full word list in the solution is:')
+  if(entry == '.solution'){
+    if(nrow(pangrams) == 1)
+      writeLines('The pangram is')
+    else  
+      writeLines('The pangrams are')
+    print(noquote(pangrams$word))
+    writeLines('\nThe full word list is:')
     print(noquote(solution$word))
-    writeLines('of which you missed')
+    writeLines('\nof which you missed')
     print(noquote(setdiff(solution$word, found_words)))
     break
   }
-  if(guess %in% found_words){
+  if(entry %in% found_words){
     writeLines('Word already found')
     next
   }
-  if(str_length(guess) < 4){
+  if(str_length(entry) < 4){
     writeLines('Too short!')
     next
   }
-  if(length(setdiff(unique(unlist(str_split(guess, pattern = ''))), hive_letters)) > 0){
+  if(length(setdiff(unique(unlist(str_split(entry, pattern = ''))), hive_letters)) > 0){
     writeLines('Illegal letter!')
     next
   }
-  if(!required_letter %in% unique(unlist(str_split(guess, pattern = '')))){
+  if(!required_letter %in% unique(unlist(str_split(entry, pattern = '')))){
     writeLines('Must contain the core letter!')
     next
   }
-  if(guess %in% solution$word) {
-    found_words = c(found_words, guess)
-    length = str_length(guess)
-    if (guess %in% pangrams) {
+  if(entry %in% solution$word) {
+    found_words = c(found_words, entry)
+    length = str_length(entry)
+    if (entry %in% pangrams$word) {
       points =  length + 7
       greeting = 'Pangram!'
     } else{
@@ -549,5 +703,5 @@ while (1) {
     show(hive)
     
   } else
-    writeLines(paste0(guess, ' is not on the solution list :('))
+    writeLines(paste0(entry, ' is not on the solution list :('))
 }
